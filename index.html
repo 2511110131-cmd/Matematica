@@ -1,0 +1,503 @@
+%%writefile index.html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Caminos, Ciclos y Conectividad en Grafos</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+.chart-container {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    height: 350px;
+    max-height: 400px;
+}
+@media (min-width: 768px) {
+    .chart-container {
+        height: 380px;
+    }
+}
+.flashcard-inner {
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+}
+.flashcard.flipped .flashcard-inner {
+    transform: rotateY(180deg);
+}
+.flashcard-front, .flashcard-back {
+    backface-visibility: hidden;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+.flashcard-back {
+    transform: rotateY(180deg);
+}
+.node-circle {
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+.node-active {
+    background-color: #0d9488;
+    color: white;
+    transform: scale(1.1);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+</style>
+</head>
+<body class="bg-stone-50 text-stone-800 font-sans antialiased min-h-screen flex flex-col">
+
+<!-- Chosen Palette: Warm neutrals (stone), accented with muted teal (teal-600), indigo (indigo-600), and amber (amber-600) for cognitive ease and clear visual hierarchy. -->
+<!-- Application Structure Plan: Tabbed Learning Dashboard. Allows non-linear exploration of concepts. Tabs separate distinct cognitive domains (Algorithms, Structures, Connectivity, Vocabulary, Assessment). This structure was chosen because graph theory involves distinct but interrelated concepts; a dashboard allows students to focus on one domain at a time (e.g., algorithms vs structural properties) while easily switching contexts for holistic understanding. -->
+<!-- Visualization & Content Choices: Report Info -> BFS/DFS Comparison -> Radar Chart (Chart.js) -> Hover/Click -> Provides a comparative visual summary of abstract algorithmic properties. Key Questions -> Flashcards -> Click to flip -> Active recall assessment to enforce learning. Tree Traversal -> HTML/CSS Node Grid -> Click to simulate -> Visually demonstrates algorithm flow without complex graphics. NO SVG/Mermaid used. -->
+<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+<header class="bg-white shadow-sm border-b border-stone-200 sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-indigo-900">Teoría de Grafos</h1>
+            <p class="text-sm text-stone-500 font-medium">Matemática Discreta / Matemática Superior</p>
+        </div>
+        <nav class="flex space-x-1 bg-stone-100 p-1 rounded-lg overflow-x-auto max-w-full">
+            <button onclick="switchTab('intro')" id="tab-intro" class="tab-btn px-4 py-2 text-sm font-medium rounded-md bg-white text-indigo-700 shadow-sm transition-all whitespace-nowrap">Resumen</button>
+            <button onclick="switchTab('recorridos')" id="tab-recorridos" class="tab-btn px-4 py-2 text-sm font-medium rounded-md text-stone-600 hover:text-stone-900 transition-all whitespace-nowrap">Recorridos (BFS/DFS)</button>
+            <button onclick="switchTab('estructuras')" id="tab-estructuras" class="tab-btn px-4 py-2 text-sm font-medium rounded-md text-stone-600 hover:text-stone-900 transition-all whitespace-nowrap">Caminos y Ciclos</button>
+            <button onclick="switchTab('conectividad')" id="tab-conectividad" class="tab-btn px-4 py-2 text-sm font-medium rounded-md text-stone-600 hover:text-stone-900 transition-all whitespace-nowrap">Conectividad</button>
+            <button onclick="switchTab('glosario')" id="tab-glosario" class="tab-btn px-4 py-2 text-sm font-medium rounded-md text-stone-600 hover:text-stone-900 transition-all whitespace-nowrap">Glosario</button>
+            <button onclick="switchTab('repaso')" id="tab-repaso" class="tab-btn px-4 py-2 text-sm font-medium rounded-md text-stone-600 hover:text-stone-900 transition-all whitespace-nowrap">Repaso Activo</button>
+        </nav>
+    </div>
+</header>
+
+<main class="flex-grow max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+
+    <section id="sec-intro" class="tab-content block animate-fade-in">
+        <div class="bg-white rounded-2xl shadow-sm border border-stone-200 p-8">
+            <h2 class="text-3xl font-extrabold text-stone-900 mb-4">Guía de Estudio: Caminos, Ciclos y Conectividad</h2>
+            <div class="prose max-w-none text-stone-600 text-lg leading-relaxed">
+                <p class="mb-4">Esta aplicación interactiva está diseñada para abordar los fundamentos de la teoría de grafos, enfocándose en cómo recorrerlos sistemáticamente y cómo analizar su conectividad interna.</p>
+                <p class="mb-4">A través de las diferentes secciones, podrás examinar las diferencias operativas entre los algoritmos <strong>BFS</strong> (Búsqueda en Anchura) y <strong>DFS</strong> (Búsqueda en Profundidad), delimitar rigurosamente los conceptos de caminos y ciclos para evitar confusiones estructurales comunes, y aclarar los criterios de conectividad en grafos dirigidos (dígrafos).</p>
+                <div class="bg-indigo-50 border-l-4 border-indigo-500 p-4 mt-8 rounded-r-lg">
+                    <p class="text-indigo-800 font-medium m-0">Selecciona una pestaña en el menú superior para comenzar a explorar los temas, interactuar con las visualizaciones y evaluar tu conocimiento.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="sec-recorridos" class="tab-content hidden animate-fade-in">
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold text-stone-900 mb-2">Recorridos de Grafos: BFS vs DFS</h2>
+            <p class="text-stone-600">Comprende cómo los algoritmos navegan la estructura de un grafo utilizando diferentes estrategias y estructuras de datos subyacentes.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-stone-200 flex flex-col">
+                <h3 class="text-xl font-bold text-teal-700 mb-4 flex items-center">
+                    <span class="text-2xl mr-2">↔️</span> Búsqueda en Anchura (BFS)
+                </h3>
+                <ul class="space-y-3 text-stone-600 flex-grow">
+                    <li class="flex items-start"><span class="text-teal-500 mr-2">▪</span> Explora de manera radial, nivel por nivel.</li>
+                    <li class="flex items-start"><span class="text-teal-500 mr-2">▪</span> Utiliza una estructura de datos de <strong>Cola (FIFO - First In, First Out)</strong>.</li>
+                    <li class="flex items-start"><span class="text-teal-500 mr-2">▪</span> Garantiza encontrar el camino más corto en grafos no ponderados.</li>
+                </ul>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-stone-200 flex flex-col">
+                <h3 class="text-xl font-bold text-amber-600 mb-4 flex items-center">
+                    <span class="text-2xl mr-2">↕️</span> Búsqueda en Profundidad (DFS)
+                </h3>
+                <ul class="space-y-3 text-stone-600 flex-grow">
+                    <li class="flex items-start"><span class="text-amber-500 mr-2">▪</span> Explora de manera vertical, adentrándose lo más profundo posible.</li>
+                    <li class="flex items-start"><span class="text-amber-500 mr-2">▪</span> Utiliza una estructura de datos de <strong>Pila (LIFO)</strong> o recursividad del sistema.</li>
+                    <li class="flex items-start"><span class="text-amber-500 mr-2">▪</span> Realiza <em>backtracking</em> (retroceso) al encontrar un callejón sin salida.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-stone-200">
+                <h3 class="text-lg font-bold text-stone-900 mb-4 text-center">Comparativa Conceptual</h3>
+                <div class="chart-container">
+                    <canvas id="radarChart"></canvas>
+                </div>
+                <p class="text-sm text-stone-500 text-center mt-4">Análisis cualitativo del comportamiento de ambos algoritmos.</p>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-stone-200">
+                <h3 class="text-lg font-bold text-stone-900 mb-4 text-center">Simulación Estructural Abstracta</h3>
+                <p class="text-sm text-stone-600 mb-6 text-center">Visualiza el orden de exploración en un árbol binario conceptual. (1 es la raíz)</p>
+                
+                <div class="flex flex-col items-center justify-center space-y-4 mb-6 select-none relative h-48">
+                    <div id="node-1" class="node-circle w-12 h-12 rounded-full bg-stone-200 flex items-center justify-center font-bold text-stone-700 absolute top-0 z-10">1</div>
+                    
+                    <div id="line-1-2" class="absolute top-10 left-1/2 -ml-12 w-1 h-12 bg-stone-200 transform -rotate-45 origin-top hidden md:block"></div>
+                    <div id="line-1-3" class="absolute top-10 right-1/2 -mr-12 w-1 h-12 bg-stone-200 transform rotate-45 origin-top hidden md:block"></div>
+                    
+                    <div id="node-2" class="node-circle w-12 h-12 rounded-full bg-stone-200 flex items-center justify-center font-bold text-stone-700 absolute top-16 -ml-24 z-10">2</div>
+                    <div id="node-3" class="node-circle w-12 h-12 rounded-full bg-stone-200 flex items-center justify-center font-bold text-stone-700 absolute top-16 ml-24 z-10">3</div>
+                    
+                    <div id="node-4" class="node-circle w-12 h-12 rounded-full bg-stone-200 flex items-center justify-center font-bold text-stone-700 absolute top-32 -ml-36 z-10">4</div>
+                    <div id="node-5" class="node-circle w-12 h-12 rounded-full bg-stone-200 flex items-center justify-center font-bold text-stone-700 absolute top-32 -ml-12 z-10">5</div>
+                    <div id="node-6" class="node-circle w-12 h-12 rounded-full bg-stone-200 flex items-center justify-center font-bold text-stone-700 absolute top-32 ml-12 z-10">6</div>
+                    <div id="node-7" class="node-circle w-12 h-12 rounded-full bg-stone-200 flex items-center justify-center font-bold text-stone-700 absolute top-32 ml-36 z-10">7</div>
+                </div>
+
+                <div class="flex justify-center gap-4">
+                    <button onclick="runSimulation('bfs')" class="px-4 py-2 bg-teal-600 text-white rounded-md hover:bg-teal-700 transition font-medium shadow-sm">Simular BFS</button>
+                    <button onclick="runSimulation('dfs')" class="px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 transition font-medium shadow-sm">Simular DFS</button>
+                    <button onclick="resetSimulation()" class="px-4 py-2 bg-stone-200 text-stone-700 rounded-md hover:bg-stone-300 transition font-medium">Reset</button>
+                </div>
+                <p id="sim-status" class="text-center mt-4 font-mono text-sm text-indigo-700 h-5"></p>
+            </div>
+        </div>
+    </section>
+
+    <section id="sec-estructuras" class="tab-content hidden animate-fade-in">
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold text-stone-900 mb-2">Propiedades Estructurales: Caminos y Ciclos</h2>
+            <p class="text-stone-600">Definiciones rigurosas de las trayectorias dentro de un grafo, diferenciando entre repetición de aristas y repetición de vértices.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white rounded-xl shadow-sm border-t-4 border-indigo-500 p-6 overflow-hidden relative">
+                <div class="absolute -right-6 -top-6 text-9xl text-stone-50 opacity-50 select-none">🛣️</div>
+                <h3 class="text-xl font-bold text-stone-900 mb-3 relative z-10">Simplicidad en Caminos</h3>
+                <p class="text-stone-600 mb-4 relative z-10">Un <strong>camino simple</strong> es una sucesión de vértices y aristas donde <strong>ningún vértice se repite</strong>.</p>
+                <div class="bg-stone-100 p-4 rounded-lg relative z-10">
+                    <p class="text-sm text-stone-700"><span class="font-bold text-red-600">⚠️ Error Común:</span> Confundir un camino simple con un <em>camino Euleriano</em> (el cual recorre todas las aristas exactamente una vez, pero puede repetir vértices).</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border-t-4 border-indigo-500 p-6 overflow-hidden relative">
+                <div class="absolute -right-6 -top-6 text-9xl text-stone-50 opacity-50 select-none">📏</div>
+                <h3 class="text-xl font-bold text-stone-900 mb-3 relative z-10">Longitud de un Camino</h3>
+                <p class="text-stone-600 mb-4 relative z-10">La longitud se define estrictamente como el <strong>número de aristas</strong> que componen el camino.</p>
+                <div class="bg-stone-100 p-4 rounded-lg relative z-10">
+                    <p class="text-sm text-stone-700"><span class="font-bold text-indigo-600">💡 Regla Matemática:</span> En un camino simple, el número de aristas es siempre igual al número de vértices visitados menos uno <code class="bg-white px-1 py-0.5 rounded text-indigo-700">|V| - 1</code>.</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border-t-4 border-teal-500 p-6 overflow-hidden relative">
+                <div class="absolute -right-6 -top-6 text-9xl text-stone-50 opacity-50 select-none">🔄</div>
+                <h3 class="text-xl font-bold text-stone-900 mb-3 relative z-10">Ciclo Simple</h3>
+                <p class="text-stone-600 mb-4 relative z-10">Es una trayectoria <strong>cerrada</strong> (empieza y termina en el mismo nodo) que no repite ningún vértice intermedio.</p>
+                <ul class="text-sm text-stone-700 space-y-2 list-disc pl-5 relative z-10">
+                    <li>No contiene subciclos en su interior.</li>
+                    <li>No presenta ramificaciones repetidas.</li>
+                    <li>Longitud mínima dependiendo del tipo de grafo.</li>
+                </ul>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border-t-4 border-teal-500 p-6 overflow-hidden relative">
+                <div class="absolute -right-6 -top-6 text-9xl text-stone-50 opacity-50 select-none">🌳</div>
+                <h3 class="text-xl font-bold text-stone-900 mb-3 relative z-10">Grafos Acíclicos</h3>
+                <p class="text-stone-600 mb-4 relative z-10">Un grafo se define como acíclico si <strong>carece por completo de ciclos</strong> en su estructura.</p>
+                <div class="bg-stone-100 p-4 rounded-lg relative z-10">
+                    <p class="text-sm text-stone-700"><span class="font-bold text-teal-600">📌 Concepto Clave:</span> No depende de la proporción aristas/vértices, sino de la topología. Un <em>árbol</em> es el ejemplo perfecto de un grafo acíclico y conexo.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="sec-conectividad" class="tab-content hidden animate-fade-in">
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold text-stone-900 mb-2">Conectividad en Grafos Dirigidos (Dígrafos)</h2>
+            <p class="text-stone-600">Analiza cómo la dirección de las aristas afecta la accesibilidad global entre los nodos de la red.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-stone-200">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-bold text-stone-900">Fuertemente Conexo</h3>
+                    <span class="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">Estricto</span>
+                </div>
+                <p class="text-stone-600 mb-6">Para <strong>cualquier</strong> par de vértices <code class="text-indigo-600 bg-indigo-50 px-1 rounded">u</code> y <code class="text-indigo-600 bg-indigo-50 px-1 rounded">v</code>, existe un camino dirigido de <code class="text-indigo-600 bg-indigo-50 px-1 rounded">u</code> a <code class="text-indigo-600 bg-indigo-50 px-1 rounded">v</code> <strong>y también</strong> un camino dirigido de <code class="text-indigo-600 bg-indigo-50 px-1 rounded">v</code> a <code class="text-indigo-600 bg-indigo-50 px-1 rounded">u</code>. Hay ida y vuelta respetando las flechas.</p>
+                
+                <div class="bg-stone-50 p-6 rounded-xl border border-stone-200 flex justify-center items-center h-40 relative">
+                    <div class="w-10 h-10 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold absolute left-1/4">A</div>
+                    <div class="w-10 h-10 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold absolute right-1/4 top-6">B</div>
+                    <div class="w-10 h-10 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold absolute right-1/4 bottom-6">C</div>
+                    <div class="absolute left-1/3 top-10 text-xl font-bold text-stone-400">➡️</div>
+                    <div class="absolute right-1/4 top-1/2 text-xl font-bold text-stone-400">⬇️</div>
+                    <div class="absolute left-1/3 bottom-10 text-xl font-bold text-stone-400">⬅️</div>
+                </div>
+                <p class="text-center text-xs text-stone-500 mt-2 font-mono">Un ciclo que conecta todos los nodos asegura conectividad fuerte.</p>
+            </div>
+
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-stone-200">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-bold text-stone-900">Débilmente Conexo</h3>
+                    <span class="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">Relajado</span>
+                </div>
+                <p class="text-stone-600 mb-6">El dígrafo es conexo <strong>únicamente cuando se ignora la dirección</strong> de sus aristas (es decir, tratándolo temporalmente como un grafo no dirigido simple).</p>
+                
+                <div class="bg-stone-50 p-6 rounded-xl border border-stone-200 flex justify-center items-center h-40 relative">
+                    <div class="w-10 h-10 bg-amber-500 text-white rounded-full flex items-center justify-center font-bold absolute left-1/4">X</div>
+                    <div class="w-10 h-10 bg-amber-500 text-white rounded-full flex items-center justify-center font-bold absolute left-1/2 transform -translate-x-1/2">Y</div>
+                    <div class="w-10 h-10 bg-amber-500 text-white rounded-full flex items-center justify-center font-bold absolute right-1/4">Z</div>
+                    <div class="absolute left-[37%] text-xl font-bold text-stone-400">➡️</div>
+                    <div class="absolute right-[37%] text-xl font-bold text-stone-400">➡️</div>
+                </div>
+                <p class="text-center text-xs text-stone-500 mt-2 font-mono">X ➔ Y ➔ Z (No se puede volver de Z a X).</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="sec-glosario" class="tab-content hidden animate-fade-in">
+        <div class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h2 class="text-2xl font-bold text-stone-900 mb-2">Glosario de Términos</h2>
+                <p class="text-stone-600">Búsqueda rápida de definiciones y conceptos fundamentales.</p>
+            </div>
+            <div class="w-full md:w-72 relative">
+                <input type="text" id="searchInput" onkeyup="filterGlossary()" placeholder="Buscar término..." class="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-shadow">
+                <span class="absolute right-3 top-2.5 text-stone-400">🔍</span>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-stone-200 overflow-hidden">
+            <ul id="glossaryList" class="divide-y divide-stone-200">
+            </ul>
+        </div>
+        <div id="noResultsMsg" class="hidden text-center py-8 text-stone-500">No se encontraron términos que coincidan con la búsqueda.</div>
+    </section>
+
+    <section id="sec-repaso" class="tab-content hidden animate-fade-in">
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold text-stone-900 mb-2">Repaso Activo</h2>
+            <p class="text-stone-600">Pon a prueba tu conocimiento. Haz clic en las tarjetas para revelar la respuesta sugerida.</p>
+        </div>
+
+        <div id="flashcards-container" class="grid grid-cols-1 md:grid-cols-2 gap-6 perspective-1000">
+        </div>
+    </section>
+
+</main>
+
+<script>
+const appData = {
+    glossary: [
+        { term: "Búsqueda en Profundidad (DFS)", def: "Algoritmo de exploración de grafos que progresa longitudinalmente a lo largo de cada rama antes de retroceder." },
+        { term: "Camino Simple", def: "Trayectoria en la que todos los vértices visitados son mutuamente distintos." },
+        { term: "Ciclo Simple", def: "Camino cerrado de longitud mayor o igual a 1 donde el único vértice que se repite es el inicial/final." },
+        { term: "Longitud de un Camino", def: "Cantidad de aristas transitadas a lo largo de un recorrido." },
+        { term: "Grafo Acíclico", def: "Grafo que no posee ningún circuito cerrado o ciclo en su estructura física." },
+        { term: "Fuertemente Conexo", def: "Propiedad de un dígrafo donde todos los nodos son mutuamente alcanzables respetando el sentido de los arcos." },
+        { term: "Débilmente Conexo", def: "Propiedad de un dígrafo que se conecta solo cuando se desestiman las direcciones de sus enlaces." },
+        { term: "Backtracking (Retroceso)", def: "Técnica algorítmica utilizada por DFS para volver sobre los propios pasos cuando una rama de exploración ha sido completamente agotada." }
+    ],
+    questions: [
+        { 
+            q: "¿Por qué la longitud de un camino en un grafo se cuenta en aristas y no en el número de vértices visitados?", 
+            a: "Porque la longitud mide la cantidad de transiciones o 'pasos' necesarios para ir de un punto a otro. Matemáticamente, en un camino simple, el número de aristas es siempre igual al número de vértices visitados menos uno (|V| - 1)." 
+        },
+        { 
+            q: "¿Cuál es la diferencia fundamental entre un grafo débilmente conexo y uno fuertemente conexo?", 
+            a: "En el fuertemente conexo se respetan las direcciones para asegurar rutas en ambos sentidos. En el débilmente conexo, se conectan solo si transformamos las flechas en líneas simples. Ejemplo: A → B → C es débilmente conexo (no hay vuelta C a A)." 
+        },
+        { 
+            q: "¿Qué estructura de datos respalda a DFS y cómo influye en el backtracking?", 
+            a: "DFS utiliza una pila (LIFO). El último nodo en entrar es el primero en explorarse, obligando a seguir una línea profunda. Al llegar a un callejón sin salida, la pila se vacía naturalmente (backtracking) para retomar bifurcaciones." 
+        },
+        { 
+            q: "Si un grafo posee n vértices y no tiene ciclos, ¿cuál es el número máximo de aristas que puede llegar a tener?", 
+            a: "Un grafo acíclico (o bosque) con n vértices puede tener como máximo n-1 aristas. Al añadir una arista adicional (n aristas), se introduce inevitablemente al menos un ciclo." 
+        }
+    ],
+    chartInstance: null,
+    simTimeouts: []
+};
+
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(el => {
+        el.classList.add('hidden');
+        el.classList.remove('block');
+    });
+    
+    document.querySelectorAll('.tab-btn').forEach(el => {
+        el.classList.remove('bg-white', 'text-indigo-700', 'shadow-sm');
+        el.classList.add('text-stone-600', 'hover:text-stone-900', 'bg-transparent');
+    });
+
+    const activeContent = document.getElementById('sec-' + tabId);
+    if(activeContent) {
+        activeContent.classList.remove('hidden');
+        activeContent.classList.add('block');
+    }
+    
+    const activeBtn = document.getElementById('tab-' + tabId);
+    if(activeBtn) {
+        activeBtn.classList.remove('text-stone-600', 'hover:text-stone-900', 'bg-transparent');
+        activeBtn.classList.add('bg-white', 'text-indigo-700', 'shadow-sm');
+    }
+
+    if (tabId === 'recorridos' && !appData.chartInstance) {
+        initChart();
+    }
+}
+
+function initChart() {
+    const ctx = document.getElementById('radarChart').getContext('2d');
+    appData.chartInstance = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: [
+                'Expansión por Niveles',
+                'Uso de Cola (FIFO)',
+                'Garantía Camino Corto',
+                'Exploración Profunda',
+                'Uso de Pila (LIFO)',
+                'Uso de Backtracking'
+            ],
+            datasets: [{
+                label: 'BFS (Anchura)',
+                data: [100, 100, 100, 20, 0, 10],
+                fill: true,
+                backgroundColor: 'rgba(13, 148, 136, 0.2)',
+                borderColor: 'rgba(13, 148, 136, 1)',
+                pointBackgroundColor: 'rgba(13, 148, 136, 1)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgba(13, 148, 136, 1)'
+            }, {
+                label: 'DFS (Profundidad)',
+                data: [20, 0, 30, 100, 100, 100],
+                fill: true,
+                backgroundColor: 'rgba(217, 119, 6, 0.2)',
+                borderColor: 'rgba(217, 119, 6, 1)',
+                pointBackgroundColor: 'rgba(217, 119, 6, 1)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgba(217, 119, 6, 1)'
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            responsive: true,
+            scales: {
+                r: {
+                    angleLines: { color: 'rgba(0, 0, 0, 0.1)' },
+                    grid: { color: 'rgba(0, 0, 0, 0.05)' },
+                    pointLabels: {
+                        font: { size: 11, family: 'sans-serif' },
+                        color: '#444'
+                    },
+                    ticks: { display: false, max: 100, min: 0 }
+                }
+            },
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + (context.raw > 80 ? 'Alta' : (context.raw > 40 ? 'Media' : 'Baja'));
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderGlossary() {
+    const list = document.getElementById('glossaryList');
+    list.innerHTML = appData.glossary.map(item => `
+        <li class="p-4 hover:bg-stone-50 transition-colors">
+            <h4 class="text-lg font-bold text-indigo-900 mb-1">${item.term}</h4>
+            <p class="text-stone-600 text-sm leading-relaxed">${item.def}</p>
+        </li>
+    `).join('');
+}
+
+function filterGlossary() {
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    let hasResults = false;
+    const listItems = document.getElementById('glossaryList').children;
+    
+    appData.glossary.forEach((item, index) => {
+        const matches = item.term.toLowerCase().includes(query) || item.def.toLowerCase().includes(query);
+        listItems[index].style.display = matches ? 'block' : 'none';
+        if (matches) hasResults = true;
+    });
+
+    document.getElementById('noResultsMsg').style.display = hasResults ? 'none' : 'block';
+}
+
+function renderFlashcards() {
+    const container = document.getElementById('flashcards-container');
+    container.innerHTML = appData.questions.map((item, index) => `
+        <div class="flashcard w-full h-64 bg-transparent cursor-pointer perspective-1000" onclick="this.classList.toggle('flipped')">
+            <div class="flashcard-inner relative w-full h-full rounded-2xl shadow-sm border border-stone-200">
+                <div class="flashcard-front bg-white p-6 rounded-2xl flex flex-col justify-center items-center text-center absolute w-full h-full backface-hidden">
+                    <span class="text-3xl mb-4 text-indigo-400">❓</span>
+                    <h3 class="text-lg font-bold text-stone-800 px-2">${item.q}</h3>
+                    <p class="text-xs text-stone-400 mt-auto uppercase tracking-wider">Click para ver respuesta</p>
+                </div>
+                <div class="flashcard-back bg-indigo-50 p-6 rounded-2xl flex flex-col justify-center items-center text-center absolute w-full h-full backface-hidden border border-indigo-100 overflow-y-auto">
+                    <span class="text-3xl mb-2 text-indigo-600">💡</span>
+                    <p class="text-sm font-medium text-indigo-900 leading-relaxed">${item.a}</p>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function clearSimTimeouts() {
+    appData.simTimeouts.forEach(t => clearTimeout(t));
+    appData.simTimeouts = [];
+}
+
+function resetSimulation() {
+    clearSimTimeouts();
+    for(let i=1; i<=7; i++) {
+        const el = document.getElementById('node-'+i);
+        if(el) {
+            el.classList.remove('node-active');
+            el.innerText = i;
+        }
+    }
+    document.getElementById('sim-status').innerText = '';
+}
+
+function runSimulation(type) {
+    resetSimulation();
+    const status = document.getElementById('sim-status');
+    
+    let order = [];
+    if (type === 'bfs') {
+        order = [1, 2, 3, 4, 5, 6, 7]; 
+        status.innerText = "BFS: Explorando nivel por nivel (1 → 2,3 → 4,5,6,7)";
+    } else {
+        order = [1, 2, 4, 5, 3, 6, 7]; 
+        status.innerText = "DFS: Explorando rama izquierda a profundidad, luego derecha";
+    }
+
+    order.forEach((nodeId, index) => {
+        const t = setTimeout(() => {
+            const el = document.getElementById('node-'+nodeId);
+            el.classList.add('node-active');
+            el.innerText = `P${index+1}`;
+        }, (index + 1) * 600);
+        appData.simTimeouts.push(t);
+    });
+    
+    const finishT = setTimeout(() => {
+        status.innerText = type.toUpperCase() + " Completado.";
+    }, (order.length + 1) * 600);
+    appData.simTimeouts.push(finishT);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    renderGlossary();
+    renderFlashcards();
+});
+</script>
+</body>
+</html>
